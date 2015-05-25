@@ -1,4 +1,4 @@
-=== WooCommerce Password Protected Categories ===
+=== WooCommerce Restrict Categories ===
 Contributors: fjarrett
 Tags: ecommerce, shop, shopping, store, woocommerce
 Requires at least: 4.0
