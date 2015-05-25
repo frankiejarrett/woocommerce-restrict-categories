@@ -43,6 +43,16 @@ class WC_Restrict_Categories {
 	public static $instance;
 
 	/**
+	 * Hold maximum number of users to preload during ajax search
+	 *
+	 * @access public
+	 * @static
+	 *
+	 * @var int
+	 */
+	public static $preload_users_max;
+
+	/**
 	 * Plugin version number
 	 *
 	 * @const string
@@ -61,6 +71,19 @@ class WC_Restrict_Categories {
 
 		define( 'WC_RESTRICT_CATEGORIES_URL', plugins_url( '/', __FILE__ ) );
 
+		/**
+		 * Filter the maximum number of users to preload during ajax search
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return int
+		 */
+		self::$preload_users_max = absint( apply_filters( 'wcrc_preload_users_max', 50 ) );
+
+		add_action( 'wp_ajax_wcrc_search_users', array( $this, 'ajax_search_users' ) );
+
+		add_action( 'wp_ajax_wcrc_add_user', array( $this, 'ajax_add_user' ) );
+
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
 		add_action( 'product_cat_edit_form_fields', array( $this, 'edit_category_fields' ), 11, 2 );
@@ -68,6 +91,115 @@ class WC_Restrict_Categories {
 		add_action( 'edit_term', array( $this, 'save_category_fields' ), 10, 3 );
 
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_category' ) );
+	}
+
+	/**
+	 *
+	 *
+	 * @action wp_ajax_wcrc_search_users
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public function ajax_search_users() {
+		$users = array_filter(
+			get_users(),
+			function ( $user ) {
+				if ( ! isset( $_GET['q'] ) ) {
+					return false;
+				}
+
+				$q            = mb_strtolower( trim( $_GET['q'] ) );
+				$display_name = mb_strtolower( $user->display_name );
+				$user_login   = mb_strtolower( $user->user_login );
+				$roles        = mb_strtolower( implode( ', ', $user->roles ) );
+				$user_email   = mb_strtolower( $user->user_email );
+
+				return ( false !== mb_strpos( $display_name, $q ) || false !== mb_strpos( $user_login, $q ) || false !== mb_strpos( $roles, $q ) || false !== mb_strpos( $user_email, $q ) );
+			}
+		);
+
+		$users = array_map(
+			function( $user ) {
+				return array(
+					'id'   => $user->ID,
+					'text' => $user->display_name,
+				);
+			},
+			$users
+		);
+
+		if ( count( $users ) > self::$preload_users_max ) {
+			$users = array_slice( $users, 0, self::$preload_users_max );
+		}
+
+		echo json_encode( array_values( $users ) );
+
+		die();
+	}
+
+	/**
+	 *
+	 *
+	 * @action wp_ajax_wcrc_add_user
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public function ajax_add_user() {
+		$tax_slug = ! empty( $_GET['taxonomy'] ) ? $_GET['taxonomy'] : null;
+		$term_id  = ! empty( $_GET['term_id'] ) ? absint( $_GET['term_id'] ) : null;
+
+		if ( ! taxonomy_exists( $tax_slug ) || ! term_exists( $term_id, $tax_slug ) ) {
+			die();
+		}
+
+		$user_id  = ! empty( $_GET['user_id'] ) ? absint( $_GET['user_id'] ) : null;
+		$user     = get_user_by( 'id', $user_id );
+
+		if ( ! $user ) {
+			die();
+		}
+
+		$roles = self::get_roles();
+
+		$data = array(
+			'user_id'     => $user->ID,
+			'avatar'      => get_avatar( $user->ID, 24 ),
+			'name'        => $user->display_name,
+			'role'        => ! empty( $roles[ $user->roles[0] ] ) ? $roles[ $user->roles[0] ] : 'N/A',
+			'views'       => absint( self::get_user_meta_for_term( $user->ID, 'views', $tax_slug, $term_id ) ),
+			'last_viewed' => self::get_user_meta_for_term( $user->ID, 'last_viewed', $tax_slug, $term_id ),
+		);
+
+		echo json_encode( $data );
+
+		die();
+	}
+
+	/**
+	 *
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @param int    $user_id
+	 * @param string $meta_key
+	 * @param string $taxonomy
+	 * @param int    $term_id
+	 *
+	 * @return mixed
+	 */
+	public static function get_user_meta_for_term( $user_id, $meta_key, $taxonomy, $term_id ) {
+		$prefix = sprintf( 'wcrc_%s_%d-', $taxonomy, absint( $term_id ) );
+		$value  = get_user_meta( $user_id, $prefix . $meta_key, true );
+
+		return is_array( $value ) ? (array) $value : ( is_numeric( $value ) ? intval( $value ) : (string) $value );
 	}
 
 	/**
@@ -119,6 +251,9 @@ class WC_Restrict_Categories {
 			return;
 		}
 
+		// Scripts
+		wp_enqueue_script( 'wcrc-admin', WC_RESTRICT_CATEGORIES_URL . 'ui/js/admin.js', array( 'jquery', 'select2' ), self::VERSION );
+
 		// Styles
 		wp_enqueue_style( 'wcrc-admin', WC_RESTRICT_CATEGORIES_URL . 'ui/css/admin.css', array(), self::VERSION );
 	}
@@ -143,13 +278,25 @@ class WC_Restrict_Categories {
 		$pass    = ! empty( $options['pass'] ) ? (string) $options['pass'] : null;
 		$roles   = ! empty( $options['role_whitelist'] ) ? (array) $options['role_whitelist'] : array();
 		$users   = ! empty( $options['user_whitelist'] ) ? (array) $options['user_whitelist'] : array();
+		$names   = array();
+
+		foreach ( $users as $user_id ) {
+			$user    = get_user_by( 'id', $user_id );
+			$name    = ! empty( $user->display_name ) ? $user->display_name : null;
+			$names[] = $name;
+		}
+
+		$users = array_filter( $users );
+		$names = array_filter( $names );
+
+		array_multisort( $names, SORT_ASC, SORT_STRING, $users );
 		?>
 		<tr class="form-field">
 			<th scope="row" valign="top">
 				<label><?php _e( 'Restrict Category', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
-				<input type="checkbox" name="<?php echo esc_attr( $option ) ?>[active]" id="<?php echo esc_attr( $option ) ?>[active]" value="yes" <?php checked( 'yes', $active ) ?>>
+				<input type="checkbox" name="<?php echo esc_attr( $option ) ?>[active]" id="<?php echo esc_attr( $option ) ?>[active]" class="wcrc-active-option" value="yes" <?php checked( 'yes', $active ) ?>>
 				<label for="<?php echo esc_attr( $option ) ?>[active]">Enabled</label>
 			</td>
 		</tr>
@@ -169,7 +316,7 @@ class WC_Restrict_Categories {
 				<label><?php _e( 'Role Whitelist', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
-				<p class="description">Grant access to certain user roles automatically without requiring the category password.</p>
+				<p class="description">Select roles that should always have access without requiring the category password.</p>
 				<br>
 				<div id="<?php echo esc_attr( $option ) ?>[role_whitelist]">
 					<fieldset>
@@ -192,14 +339,17 @@ class WC_Restrict_Categories {
 			<td>
 				<p class="description">Grant access to certain registered users automatically without requiring the category password.</p>
 				<br>
-				<div class="tablenav top"><input type="button" class="button" id="exclude_rules_new_rule" value="+ Add User"></div>
-				<table class="wp-list-table widefat fixed wcrc-user-table">
+				<div class="tablenav top">
+					<input type="hidden" id="wcrc-user-whitelist-select" class="wcrc-select2">
+					<input type="button" class="button" id="wcrc-user-whitelist-add" value="Add To Whitelist" disabled="disabled">
+				</div>
+				<table id="wcrc-user-whitelist-table" class="wp-list-table widefat fixed wcrc-user-table">
 					<thead>
 						<tr>
 							<th scope="col" class="manage-column check-column"><input class="cb-select" type="checkbox" disabled=""></th>
 							<th scope="col" class="manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Viewed', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column"><?php _e( 'Views', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column"><?php _e( 'Last Viewed', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column wcrc-actions-column"><span class="hidden"><?php _e( 'Action', 'woocommerce-restrict-categories' ) ?></span></th>
 						</tr>
@@ -209,33 +359,63 @@ class WC_Restrict_Categories {
 							<th scope="col" class="manage-column check-column"><input class="cb-select" type="checkbox" disabled=""></th>
 							<th scope="col" class="manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Viewed', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column"><?php _e( 'Views', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column"><?php _e( 'Last Viewed', 'woocommerce-restrict-categories' ) ?></th>
 							<th scope="col" class="manage-column wcrc-actions-column"><span class="hidden"><?php _e( 'Action', 'woocommerce-restrict-categories' ) ?></span></th>
 						</tr>
 					</tfoot>
 					<tbody>
-						<tr class="wcrc-no-items hidden" style="display: table-row;">
+						<tr class="wcrc-no-items hidden">
 							<td class="colspanchange" colspan="6">
 								<?php _e( 'No users have been whitelisted.', 'woocommerce-restrict-categories' ) ?></a>
 							</td>
 						</tr>
-						<tr class=" hidden helper">
+						<tr class="wcrc-helper hidden">
 							<th scope="row" class="check-column">
 								<input class="cb-select" type="checkbox">
-								<input type="hidden" name="<?php echo esc_attr( $option ) ?>[user_whitelist][]" value="">
+								<input type="hidden" name="<?php echo esc_attr( $option ) ?>[user_whitelist][]" class="wcrc-user-id" value="">
 							</th>
-							<td></td>
-							<td></td>
-							<td></td>
+							<td class="wcrc-name-column"><span></span></td>
+							<td class="wcrc-role-column"></td>
+							<td class="wcrc-views-column"></td>
+							<td class="wcrc-last-viewed-column"></td>
 							<th scope="row" class="wcrc-actions-column">
-								<a href="#" class="wcrc-user-whitelist-remove-row"><?php _e( 'Delete', 'woocommerce-restrict-categories' ) ?></a>
+								<a href="#" class="wcrc-user-whitelist-remove-row"><?php _e( 'Remove', 'woocommerce-restrict-categories' ) ?></a>
 							</th>
 						</tr>
+						<?php foreach ( $users as $user_id ) : ?>
+							<?php
+							$user = get_user_by( 'id', $user_id );
+
+							if ( ! $user ) {
+								continue;
+							}
+
+							$roles       = self::get_roles();
+							$role        = ! empty( $roles[ $user->roles[0] ] ) ? $roles[ $user->roles[0] ] : null;
+							$taxonomy    = ! empty( $_GET['taxonomy'] ) ? sanitize_key( $_GET['taxonomy'] ) : null;
+							$term_id     = ! empty( $_GET['tag_ID'] ) ? absint( $_GET['tag_ID'] ) : null;
+							$views       = self::get_user_meta_for_term( $user->ID, 'views', $taxonomy, $term_id );
+							$last_viewed = self::get_user_meta_for_term( $user->ID, 'last_viewed', $taxonomy, $term_id );
+							?>
+							<tr>
+								<th scope="row" class="check-column">
+									<input class="cb-select" type="checkbox">
+									<input type="hidden" name="<?php echo esc_attr( $option ) ?>[user_whitelist][]" class="wcrc-user-id" value="<?php echo absint( $user->ID ) ?>">
+								</th>
+								<td class="wcrc-name-column"><span><?php echo get_avatar( $user->ID, 24 ) ?> <?php echo esc_html( $user->display_name ) ?></span></td>
+								<td class="wcrc-role-column"><?php echo esc_html( $role ) ?></td>
+								<td class="wcrc-views-column"><?php echo absint( $views ) ?></td>
+								<td class="wcrc-last-viewed-column"><?php echo esc_html( $last_viewed ) ?></td>
+								<th scope="row" class="wcrc-actions-column">
+									<a href="#" class="wcrc-user-whitelist-remove-row"><?php _e( 'Remove', 'woocommerce-restrict-categories' ) ?></a>
+								</th>
+							</tr>
+						<?php endforeach; ?>
 					</tbody>
 				</table>
 				<div class="tablenav bottom">
-					<input type="button" class="button" id="wcrc-user-whitelist-remove-selected" value="Remove Selected Users" disabled="disabled">
+					<input type="button" class="button" id="wcrc-user-whitelist-remove-selected" value="Remove Selected" disabled="disabled">
 				</div>
 			</td>
 		</tr>

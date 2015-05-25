@@ -2,6 +2,14 @@
 	width: 25em !important;
 }
 
+.select2-results .select2-result-unselectable {
+	color: #aaa;
+}
+
+.wcrc-select2 {
+	width: 200px;
+}
+
 .wcrc-user-table {
 	margin-top: 1em;
 }
@@ -12,12 +20,30 @@
 	width: auto;
 }
 
+.wcrc-user-table tbody th,
+.wcrc-user-table tbody td {
+	cursor: default !important;
+	font-size: 13px;
+}
+
+.wcrc-user-table .wcrc-name-column span {
+	position: relative;
+	padding-left: 35px;
+}
+
+.wcrc-user-table .wcrc-name-column .avatar {
+	position: absolute;
+	top: -3px;
+	left: 0;
+	border-radius: 100%;
+}
+
 .wcrc-user-table tbody tr.wcrc-no-items {
 	background-color: #fff;
 }
 
 .wcrc-user-table tbody tr.wcrc-no-items td {
-	padding: 8px 10px;
+	padding: 15px 10px;
 	font-size: 13px;
 }
 
@@ -30,7 +56,7 @@
 }
 
 .wcrc-user-table tbody th.wcrc-actions-column {
-	padding: 21px 10px 20px 0;
+	padding: 15px 10px 0 0;
 }
 
 .wcrc-user-table tbody th.wcrc-actions-column a {
