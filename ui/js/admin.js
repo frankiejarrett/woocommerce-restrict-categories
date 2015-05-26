@@ -19,6 +19,8 @@ jQuery( document ).ready( function( $ ) {
 			$rows.hide();
 			$pass.prop( 'required', false );
 		}
+
+		calcColSpan();
 	}
 
 	setActiveStatus();
@@ -28,9 +30,11 @@ jQuery( document ).ready( function( $ ) {
 	});
 
 	// WooCommerce has poor scope when targeting elements and is making this table sortable
-	$table.sortable({
-		disabled: true
-	});
+	if ( 'function' === typeof sortable ) {
+		$table.sortable({
+			disabled: true
+		});
+	}
 
 	// select2 init
 	$select.select2({
