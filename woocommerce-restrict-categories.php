@@ -191,6 +191,7 @@ class WC_Restrict_Categories {
 		$pass   = (string) get_option( $prefix . 'pass' );
 		$roles  = (array) get_option( $prefix . 'role_whitelist' );
 		$users  = (array) get_option( $prefix . 'user_whitelist' );
+		$labels = get_taxonomy_labels( get_taxonomy( $taxonomy ) );
 
 		/**
 		 * Filter the minimum allowed password length
@@ -206,7 +207,7 @@ class WC_Restrict_Categories {
 		?>
 		<tr class="form-field">
 			<th scope="row" valign="top">
-				<label><?php _e( 'Restrict Category', 'woocommerce-restrict-categories' ) ?></label>
+				<label><?php _e( 'Restrict Access', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
 				<input type="hidden" name="<?php echo esc_attr( $prefix . 'active' ) ?>" value="no">
@@ -215,22 +216,22 @@ class WC_Restrict_Categories {
 			</td>
 		</tr>
 
-		<tr class="form-field wcrc-field">
+		<tr class="form-field wcrc-field hidden">
 			<th scope="row" valign="top">
-				<label for="<?php echo esc_attr( $prefix . 'pass' ) ?>"><?php _e( 'Category Password', 'woocommerce-restrict-categories' ) ?></label>
+				<label for="<?php echo esc_attr( $prefix . 'pass' ) ?>"><?php _e( 'Password', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
 				<input type="text" name="<?php echo esc_attr( $prefix . 'pass' ) ?>" id="<?php echo esc_attr( $prefix . 'pass' ) ?>" class="regular-text code wcrc-pass-option" pattern=".{<?php echo absint( $min_pass_length ) ?>,}" title="<?php printf( _n( 'Must be at least 1 character.', 'Must be at least %d characters.', absint( $min_pass_length ), 'woocommerce-restrict-categories' ), absint( $min_pass_length ) ) ?>" value="<?php echo esc_attr( $pass ) ?>" autocomplete="off">
-				<p class="description"><?php _e( 'Users will be required to enter this password in order to view this category and the products within it.', 'woocommerce-restrict-categories' ) ?></p>
+				<p class="description"><?php printf( __( 'Visitors will be required to enter a password to view this %s archive and the products within it.', 'woocommerce-restrict-categories' ), esc_html( $labels->singular_name ) ) ?></p>
 			</td>
 		</tr>
 
-		<tr class="form-field wcrc-field">
+		<tr class="form-field wcrc-field hidden">
 			<th scope="row" valign="top">
 				<label><?php _e( 'Role Whitelist', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
-				<p class="description"><?php _e( 'Select roles that should always have access without requiring the category password.', 'woocommerce-restrict-categories' ) ?></p>
+				<p class="description"><?php _e( 'Select roles that should always have access without requiring the password.', 'woocommerce-restrict-categories' ) ?></p>
 				<br>
 				<div id="<?php echo esc_attr( $prefix . 'role_whitelist' ) ?>">
 					<fieldset>
@@ -247,12 +248,12 @@ class WC_Restrict_Categories {
 			</td>
 		</tr>
 
-		<tr class="form-field wcrc-field">
+		<tr class="form-field wcrc-field hidden">
 			<th scope="row" valign="top">
 				<label><?php _e( 'User Whitelist', 'woocommerce-restrict-categories' ) ?></label>
 			</th>
 			<td>
-				<p class="description"><?php _e( 'Grant access to certain registered users automatically without requiring the category password.', 'woocommerce-restrict-categories' ) ?></p>
+				<p class="description"><?php _e( 'List registered users that should always have access without requiring the password.', 'woocommerce-restrict-categories' ) ?></p>
 				<br>
 				<div class="tablenav top">
 					<input type="hidden" id="wcrc-user-whitelist-select" class="wcrc-select2">
