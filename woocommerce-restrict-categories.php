@@ -43,7 +43,7 @@ class WC_Restrict_Categories {
 	public static $instance;
 
 	/**
-	 * Hold the taxonomy slugs where restriction is enabled
+	 * Hold the taxonomy slugs where restriction is allowed
 	 *
 	 * @access public
 	 * @static
@@ -51,6 +51,16 @@ class WC_Restrict_Categories {
 	 * @var array
 	 */
 	public static $taxonomies;
+
+	/**
+	 * Hold the post types where taxonomy restrictions should be honored
+	 *
+	 * @access public
+	 * @static
+	 *
+	 * @var array
+	 */
+	public static $post_types;
 
 	/**
 	 * Plugin version number
@@ -89,7 +99,7 @@ class WC_Restrict_Categories {
 		} );
 
 		/**
-		 * Register the taxonomy slugs where restriction will be enabled
+		 * Register the taxonomy slugs where restriction will be allowed
 		 *
 		 * @since 1.0.0
 		 *
@@ -97,6 +107,16 @@ class WC_Restrict_Categories {
 		 */
 		self::$taxonomies = (array) apply_filters( 'wcrc_taxonomies', array( 'product_cat', 'product_tag' ) );
 
+		/**
+		 * Register the post types where taxonomy restrictions should be honored
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return array
+		 */
+		self::$post_types = (array) apply_filters( 'wcrc_post_types', array( 'product' ) );
+
+		// Enqueue scripts and styles in the admin
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 	}
 

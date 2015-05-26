@@ -19,7 +19,7 @@ class WC_Restrict_Categories_Auth {
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_tax_term_archive' ) );
 
 		// Check for possible restriction on single products
-		add_action( 'template_redirect', array( $this, 'maybe_restrict_product' ) );
+		add_action( 'template_redirect', array( $this, 'maybe_restrict_post' ) );
 	}
 
 	/**
@@ -142,8 +142,12 @@ class WC_Restrict_Categories_Auth {
 	 *
 	 * @return void
 	 */
-	public function maybe_restrict_product() {
-		if ( ! is_single() ) {
+	public function maybe_restrict_post() {
+		if ( ! is_singular() ) {
+			return;
+		}
+
+		if ( ! in_array( get_post_type(), WC_Restrict_Categories::$post_types ) ) {
 			return;
 		}
 
