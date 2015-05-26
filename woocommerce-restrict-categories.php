@@ -186,7 +186,7 @@ class WC_Restrict_Categories {
 	 * @return void
 	 */
 	public function render_custom_term_fields( $term, $taxonomy ) {
-		$prefix = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), absint( $term->term_id ) );
+		$prefix = self::get_tax_term_option_name( $term->term_id, $taxonomy );
 		$active = (string) get_option( $prefix . 'active' );
 		$pass   = (string) get_option( $prefix . 'pass' );
 		$roles  = (array) get_option( $prefix . 'role_whitelist' );
@@ -360,7 +360,7 @@ class WC_Restrict_Categories {
 			return;
 		}
 
-		$prefix = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), absint( $term_id ) );
+		$prefix = self::get_tax_term_option_name( $term_id, $taxonomy );
 
 		foreach ( (array) $_POST as $option => $value ) {
 			if ( 0 !== strpos( $option, $prefix ) ) {
@@ -665,21 +665,18 @@ class WC_Restrict_Categories {
 	 * @return bool
 	 */
 	public static function has_whitelisted_role( $term_id, $taxonomy ) {
-		$term_id = absint( $term_id );
-
 		if (
 			! is_user_logged_in()
 			||
 			! taxonomy_exists( $taxonomy )
 			||
-			! term_exists( $term_id, $taxonomy )
+			! term_exists( absint( $term_id ), $taxonomy )
 		) {
 			return false;
 		}
 
 		$user      = wp_get_current_user();
-		$prefix    = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), $term_id );
-		$whitelist = (array) get_option( $prefix . 'role_whitelist' );
+		$whitelist = (array) self::get_tax_term_option( $term_id, $taxonomy, 'role_whitelist' );
 		$roles     = isset( $user->roles ) ? (array) $user->roles : array();
 		$intersect = array_intersect( $roles, $whitelist );
 
@@ -699,22 +696,56 @@ class WC_Restrict_Categories {
 	 * @return bool
 	 */
 	public static function is_whitelisted_user( $term_id, $taxonomy ) {
-		$term_id = absint( $term_id );
-
 		if (
 			! is_user_logged_in()
 			||
 			! taxonomy_exists( $taxonomy )
 			||
-			! term_exists( $term_id, $taxonomy )
+			! term_exists( absint( $term_id ), $taxonomy )
 		) {
 			return false;
 		}
 
-		$prefix    = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), $term_id );
-		$whitelist = (array) get_option( $prefix . 'user_whitelist' );
+		$whitelist = (array) self::get_tax_term_option( $term_id, $taxonomy, 'user_whitelist' );
 
 		return in_array( get_current_user_id(), $whitelist );
+	}
+
+	/**
+	 * Return a unique option name relative to a tax/term context
+	 *
+	 * @access public
+	 * @static
+	 * @since 1.0.0
+	 *
+	 * @param int    $term_id
+	 * @param string $taxonomy
+	 * @param string $option (optional)
+	 *
+	 * @return string
+	 */
+	public static function get_tax_term_option_name( $term_id, $taxonomy, $option = null ) {
+		return sprintf( '%s%s_%d-%s', self::PREFIX, sanitize_key( $taxonomy ), absint( $term_id ), sanitize_key( $option ) );
+	}
+
+	/**
+	 * Return an option value relative to a tax/term context
+	 *
+	 * @access public
+	 * @static
+	 * @since 1.0.0
+	 *
+	 * @param int    $term_id
+	 * @param string $taxonomy
+	 * @param string $option
+	 * @param mixed  $default (optional)
+	 *
+	 * @return string
+	 */
+	public static function get_tax_term_option( $term_id, $taxonomy, $option, $default = false ) {
+		$option_name = self::get_tax_term_option_name( $term_id, $taxonomy, $option );
+
+		return get_option( $option_name, $default );
 	}
 
 	/**
