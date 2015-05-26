@@ -2,20 +2,23 @@
 jQuery( document ).ready( function( $ ) {
 
 	var $active = $( '.wcrc-active-option' ),
+	    $pass   = $( '.wcrc-pass-option' ),
 	    $rows   = $( '.wcrc-field' );
 
-	if ( $active.is( ':checked' ) ) {
-		$rows.show();
-	} else {
-		$rows.hide();
-	}
-
-	$active.change( function() {
-		if ( this.checked ) {
+	function setActiveStatus() {
+		if ( $active.is( ':checked' ) ) {
 			$rows.show();
+			$pass.prop( 'required', true );
 		} else {
 			$rows.hide();
+			$pass.prop( 'required', false );
 		}
+	}
+
+	setActiveStatus();
+
+	$active.change( function() {
+		setActiveStatus();
 	});
 
 	var $select    = $( '#wcrc-user-whitelist-select' ),
