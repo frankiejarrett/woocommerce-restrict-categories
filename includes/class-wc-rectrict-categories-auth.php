@@ -20,6 +20,9 @@ class WC_Restrict_Categories_Auth {
 
 		// Check for possible restriction on single products
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_post' ) );
+
+		// Omit posts from restricted taxonomies from main queries when not authenticated
+		add_action( 'pre_get_posts', array( $this, 'maybe_filter_posts' ) );
 	}
 
 	/**
@@ -129,7 +132,11 @@ class WC_Restrict_Categories_Auth {
 			return;
 		}
 
-		self::password_notice( $term->term_id, $taxonomy );
+		$restricted = (array) get_option( WC_Restrict_Categories::PREFIX . $taxonomy );
+
+		if ( in_array( $term->term_id, $restricted ) ) {
+			self::password_notice( $term->term_id, $taxonomy );
+		}
 	}
 
 	/**
@@ -166,6 +173,67 @@ class WC_Restrict_Categories_Auth {
 				self::password_notice( $intersect[0], $taxonomy );
 			}
 		}
+	}
+
+	/**
+	 * Omit posts from restricted taxonomies from main queries when not authenticated
+	 *
+	 * @action pre_get_posts
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
+	public function maybe_filter_posts( $query ) {
+		if (
+			is_admin()
+			||
+			! in_array( $query->get( 'post_type' ), WC_Restrict_Categories::$post_types )
+		) {
+			return;
+		}
+
+		$tax_queries = array();
+
+		foreach ( WC_Restrict_Categories::$taxonomies as $taxonomy ) {
+			$terms  = (array) get_option( WC_Restrict_Categories::PREFIX . sanitize_key( $taxonomy ) );
+			$terms  = array_filter( $terms );
+			$_terms = array();
+
+			foreach ( $terms as $term_id ) {
+				$cookie = WC_Restrict_Categories_Term_Meta::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
+				$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
+
+				if (
+					! self::has_whitelisted_role( $term_id, $taxonomy )
+					&&
+					! self::is_whitelisted_user( $term_id, $taxonomy )
+					&&
+					! self::is_valid_cookie( $term_id, $taxonomy, $hash )
+				) {
+					$_terms[] = $term_id;
+				}
+			}
+
+			if ( ! empty( $_terms ) ) {
+				$tax_queries[] = array(
+					'taxonomy'  => $taxonomy,
+					'terms'     => $_terms,
+					'operator'  => 'NOT IN'
+				);
+			}
+		}
+
+		if ( isset( $query->tax_query->queries ) ) {
+			$query->tax_query->queries = array_merge( $query->tax_query->queries, $tax_queries );
+		} else {
+			$queries            = new stdClass();
+			$tax_query->queries = $tax_queries;
+			$query->tax_query   = $queries;
+		}
+
+		$query->query_vars['tax_query'] = $query->tax_query->queries;
 	}
 
 	/**
