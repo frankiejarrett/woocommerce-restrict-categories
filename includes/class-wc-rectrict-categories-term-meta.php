@@ -40,7 +40,7 @@ class WC_Restrict_Categories_Term_Meta {
 		$pass   = (string) self::get_tax_term_option( $term->term_id, $taxonomy, 'pass' );
 		$roles  = (array) self::get_tax_term_option( $term->term_id, $taxonomy, 'role_whitelist' );
 		$users  = (array) self::get_tax_term_option( $term->term_id, $taxonomy, 'user_whitelist' );
-		$labels = get_taxonomy_labels( get_taxonomy( $taxonomy ) );
+		$label  = WC_Restrict_Categories::get_tax_label( $taxonomy, 'singular_name' );
 
 		/**
 		 * Filter the minimum allowed password length
@@ -71,7 +71,7 @@ class WC_Restrict_Categories_Term_Meta {
 			</th>
 			<td>
 				<input type="text" name="<?php echo esc_attr( $prefix . 'pass' ) ?>" id="<?php echo esc_attr( $prefix . 'pass' ) ?>" class="regular-text code wcrc-pass-option" pattern=".{<?php echo absint( $min_pass_length ) ?>,}" title="<?php printf( _n( 'Must be at least 1 character.', 'Must be at least %d characters.', absint( $min_pass_length ), 'woocommerce-restrict-categories' ), absint( $min_pass_length ) ) ?>" value="<?php echo esc_attr( $pass ) ?>" autocomplete="off">
-				<p class="description"><?php printf( __( 'Visitors will be required to enter a password to view this %s archive and the products within it.', 'woocommerce-restrict-categories' ), esc_html( $labels->singular_name ) ) ?></p>
+				<p class="description"><?php printf( __( 'Visitors will be required to enter a password to view this %s archive and the products within it.', 'woocommerce-restrict-categories' ), esc_html( $label ) ) ?></p>
 			</td>
 		</tr>
 

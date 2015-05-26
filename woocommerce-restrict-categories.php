@@ -208,6 +208,29 @@ class WC_Restrict_Categories {
 		return (array) $roles;
 	}
 
+	/**
+	 * Return a particular taxonomy label with fallback support
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @param string $taxonomy
+	 * @param string $label (optional)
+	 *
+	 * @return string
+	 */
+	public static function get_tax_label( $taxonomy, $label = 'name' ) {
+		if ( false === ( $taxonomy = get_taxonomy( $taxonomy ) ) ) {
+			return (string) $taxonomy;
+		}
+
+		$labels = get_taxonomy_labels( $taxonomy );
+		$output = ! empty( $labels->$label ) ? $labels->$label : ( ! empty( $labels->name ) ? $labels->name : $taxonomy );
+
+		return (string) $output;
+	}
+
 }
 
 /**

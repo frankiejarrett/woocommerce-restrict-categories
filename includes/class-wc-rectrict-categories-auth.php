@@ -199,10 +199,9 @@ class WC_Restrict_Categories_Auth {
 			return;
 		}
 
-		$tax_object = get_taxonomy( $taxonomy );
-		$tax_labels = get_taxonomy_labels( $tax_object );
-		$self_url   = home_url( wp_unslash( remove_query_arg( 'wcrc-auth', $_SERVER['REQUEST_URI'] ) ) );
-		$incorrect  = ( isset( $_GET['wcrc-auth'] ) && 'incorrect' === $_GET['wcrc-auth'] );
+		$tax_label = WC_Restrict_Categories::get_tax_label( $taxonomy, 'singular_name' );
+		$self_url  = home_url( wp_unslash( remove_query_arg( 'wcrc-auth', $_SERVER['REQUEST_URI'] ) ) );
+		$incorrect = ( isset( $_GET['wcrc-auth'] ) && 'incorrect' === $_GET['wcrc-auth'] );
 
 		ob_start();
 		?>
@@ -210,7 +209,7 @@ class WC_Restrict_Categories_Auth {
 			<?php if ( $incorrect ) : ?>
 				<p style="background:#ffe6e5;border:1px solid #ffc5c2;padding:10px;"><strong><?php _e( 'The password you entered is incorrect. Please try again.', 'woocommerce-restrict-categories' ) ?></strong></p>
 			<?php endif; ?>
-			<h1 style="border:none;"><?php printf( __( 'This is a Restricted %s', 'woocommerce-restrict-categories' ), esc_html( $tax_labels->singular_name ) ) ?></h1>
+			<h1 style="border:none;"><?php printf( __( 'This is a Restricted %s', 'woocommerce-restrict-categories' ), esc_html( $tax_label ) ) ?></h1>
 			<p><?php _e( 'Please enter the password to unlock:', 'woocommerce-restrict-categories' ) ?></p>
 			<form method="post" action="<?php echo esc_url( $self_url ) ?>">
 				<p><input type="password" name="wcrc_pass" size="30" style="padding:3px 5px;font-size:16px;text-align:center;" autocomplete="off"></p>
@@ -225,7 +224,7 @@ class WC_Restrict_Categories_Auth {
 		<?php
 		$message = ob_get_clean();
 
-		wp_die( $message, sprintf( __( 'This is a Restricted %s', 'woocommerce-restrict-categories' ), esc_html( $tax_labels->singular_name ) ) );
+		wp_die( $message, sprintf( __( 'This is a Restricted %s', 'woocommerce-restrict-categories' ), esc_html( $tax_label ) ) );
 	}
 
 	/**
