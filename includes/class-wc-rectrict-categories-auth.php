@@ -107,17 +107,17 @@ class WC_Restrict_Categories_Auth {
 	 * @return void
 	 */
 	public function maybe_restrict_tax_term_archive() {
-		if ( ! is_tax() ) {
+		if ( ! is_tax() && ! is_category() && ! is_tag() ) {
 			return;
 		}
 
-		$taxonomy = get_query_var( 'taxonomy' );
+		$taxonomy = is_category() ? 'category' : ( is_tag() ? 'post_tag' : get_query_var( 'taxonomy' ) );
 
 		if ( ! in_array( $taxonomy, WC_Restrict_Categories::$taxonomies ) ) {
 			return;
 		}
 
-		$term_slug = get_query_var( $taxonomy );
+		$term_slug = is_category() ? get_query_var( 'category_name' ) : ( is_tag() ? get_query_var( 'tag' ) : get_query_var( $taxonomy ) );
 
 		if ( empty( $term_slug ) ) {
 			return;
