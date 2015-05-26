@@ -1,9 +1,14 @@
 /* globals ajaxurl, select2 */
 jQuery( document ).ready( function( $ ) {
 
-	var $active = $( '.wcrc-active-option' ),
-	    $pass   = $( '.wcrc-pass-option' ),
-	    $rows   = $( '.wcrc-field' );
+	var $active    = $( '.wcrc-active-option' ),
+	    $pass      = $( '.wcrc-pass-option' ),
+	    $rows      = $( '.wcrc-field' ),
+	    $select    = $( '#wcrc-user-whitelist-select' ),
+	    $addBtn    = $( '#wcrc-user-whitelist-add' ),
+	    $removeBtn = $( '#wcrc-user-whitelist-remove-selected' ),
+	    $table     = $( '#wcrc-user-whitelist-table' ),
+	    $tbody     = $( 'tbody', $table );
 
 	function setActiveStatus() {
 		if ( $active.is( ':checked' ) ) {
@@ -20,12 +25,6 @@ jQuery( document ).ready( function( $ ) {
 	$active.change( function() {
 		setActiveStatus();
 	});
-
-	var $select    = $( '#wcrc-user-whitelist-select' ),
-	    $add       = $( '#wcrc-user-whitelist-add' ),
-	    $table     = $( '#wcrc-user-whitelist-table' ),
-	    $tbody     = $table.find( 'tbody' ),
-	    $removeBtn = $( '#wcrc-user-whitelist-remove-selected' );
 
 	// WooCommerce has poor scope when targeting elements and is making this table sortable
 	$table.sortable({
@@ -64,16 +63,16 @@ jQuery( document ).ready( function( $ ) {
 
 	// Select user
 	$select.on( 'select2-selecting', function( e ) {
-		$add.prop( 'disabled', false );
+		$addBtn.prop( 'disabled', false );
 	});
 
 	// Clear user selection
 	$select.on( 'select2-removed', function( e ) {
-		$add.prop( 'disabled', true );
+		$addBtn.prop( 'disabled', true );
 	});
 
 	// Add user
-	$add.on( 'click', function( e ) {
+	$addBtn.on( 'click', function( e ) {
 		e.preventDefault();
 
 		data = {
@@ -111,7 +110,7 @@ jQuery( document ).ready( function( $ ) {
 				calcUsersSelected();
 
 				$select.select2( 'val', '' );
-				$add.prop( 'disabled', true );
+				$addBtn.prop( 'disabled', true );
 			}
 		);
 	});
