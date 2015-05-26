@@ -263,26 +263,24 @@ class WC_Restrict_Categories {
 					<thead>
 						<tr>
 							<th scope="col" class="manage-column check-column"><input class="cb-select" type="checkbox" disabled=""></th>
-							<th scope="col" class="manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Views', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Last Viewed', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column wcrc-actions-column"><span class="hidden"><?php _e( 'Action', 'woocommerce-restrict-categories' ) ?></span></th>
+							<th scope="col" class="manage-column wcrc-name-manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-role-manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-email-manage-column"><?php _e( 'E-mail', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-orders-manage-column"><?php _e( 'Orders', 'woocommerce-restrict-categories' ) ?></th>
 						</tr>
 					</thead>
 					<tfoot>
 						<tr>
 							<th scope="col" class="manage-column check-column"><input class="cb-select" type="checkbox" disabled=""></th>
-							<th scope="col" class="manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Views', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column"><?php _e( 'Last Viewed', 'woocommerce-restrict-categories' ) ?></th>
-							<th scope="col" class="manage-column wcrc-actions-column"><span class="hidden"><?php _e( 'Action', 'woocommerce-restrict-categories' ) ?></span></th>
+							<th scope="col" class="manage-column wcrc-name-manage-column"><?php _e( 'User', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-role-manage-column"><?php _e( 'Role', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-email-manage-column"><?php _e( 'E-mail', 'woocommerce-restrict-categories' ) ?></th>
+							<th scope="col" class="manage-column wcrc-orders-manage-column"><?php _e( 'Orders', 'woocommerce-restrict-categories' ) ?></th>
 						</tr>
 					</tfoot>
 					<tbody>
 						<tr class="wcrc-no-items hidden">
-							<td class="colspanchange" colspan="6">
+							<td class="colspanchange" colspan="5">
 								<?php _e( 'No users have been whitelisted.', 'woocommerce-restrict-categories' ) ?></a>
 							</td>
 						</tr>
@@ -293,11 +291,8 @@ class WC_Restrict_Categories {
 							</th>
 							<td class="wcrc-name-column"><span></span></td>
 							<td class="wcrc-role-column"></td>
-							<td class="wcrc-views-column"></td>
-							<td class="wcrc-last-viewed-column"></td>
-							<th scope="row" class="wcrc-actions-column">
-								<a href="#" class="wcrc-user-whitelist-remove-row"><?php _e( 'Remove', 'woocommerce-restrict-categories' ) ?></a>
-							</th>
+							<td class="wcrc-email-column"></td>
+							<td class="wcrc-orders-column"></td>
 						</tr>
 						<?php foreach ( $users as $user_id ) : ?>
 							<?php
@@ -309,23 +304,27 @@ class WC_Restrict_Categories {
 
 							$roles       = self::get_role_labels();
 							$role        = ! empty( $roles[ $user->roles[0] ] ) ? $roles[ $user->roles[0] ] : null;
+							$email       = ! empty( $user->user_email ) ? $user->user_email : null;
+							$orders      = get_user_meta( $user->ID, '_order_count', true );
+							$orders_url  = add_query_arg(
+								array(
+									'post_type'      => 'shop_order',
+									'_customer_user' => $user->ID,
+								),
+								admin_url( 'edit.php' )
+							);
 							$taxonomy    = ! empty( $_GET['taxonomy'] ) ? sanitize_key( $_GET['taxonomy'] ) : null;
 							$term_id     = ! empty( $_GET['tag_ID'] ) ? absint( $_GET['tag_ID'] ) : null;
-							$views       = self::get_user_meta_for_term( $user->ID, 'views', $taxonomy, $term_id );
-							$last_viewed = self::get_user_meta_for_term( $user->ID, 'last_viewed', $taxonomy, $term_id );
 							?>
 							<tr>
 								<th scope="row" class="check-column">
 									<input class="cb-select" type="checkbox">
 									<input type="hidden" name="<?php echo esc_attr( $prefix . 'user_whitelist[]' ) ?>" class="wcrc-user-id" value="<?php echo absint( $user->ID ) ?>">
 								</th>
-								<td class="wcrc-name-column"><span><?php echo get_avatar( $user->ID, 24 ) ?> <?php echo esc_html( $user->display_name ) ?></span></td>
+								<td class="wcrc-name-column"><a href="<?php echo get_edit_user_link( $user->ID ) ?>"><span><?php echo get_avatar( $user->ID, 24 ) ?> <?php echo esc_html( $user->display_name ) ?></span></a></td>
 								<td class="wcrc-role-column"><?php echo esc_html( $role ) ?></td>
-								<td class="wcrc-views-column"><?php echo absint( $views ) ?></td>
-								<td class="wcrc-last-viewed-column"><?php echo esc_html( $last_viewed ) ?></td>
-								<th scope="row" class="wcrc-actions-column">
-									<a href="#" class="wcrc-user-whitelist-remove-row"><?php _e( 'Remove', 'woocommerce-restrict-categories' ) ?></a>
-								</th>
+								<td class="wcrc-email-column"><?php echo esc_html( $email ) ?></td>
+								<td class="wcrc-orders-column"><a href="<?php echo esc_url( $orders_url ) ?>"><?php echo absint( $orders ) ?></a></td>
 							</tr>
 						<?php endforeach; ?>
 					</tbody>
@@ -379,7 +378,7 @@ class WC_Restrict_Categories {
 				$value = array_values( array_filter( $value ) );
 
 				if ( $prefix . 'user_whitelist' === $option ) {
-					$value = self::order_user_ids( $value );
+					$value = self::sort_user_ids( $value );
 					$value = array_map( 'absint', $value );
 				} else {
 					$value = array_map( 'sanitize_text_field', $value );
@@ -424,7 +423,9 @@ class WC_Restrict_Categories {
 					return false;
 				}
 
-				$q            = mb_strtolower( trim( $_GET['q'] ) );
+				$q = mb_strtolower( trim( $_GET['q'] ) );
+
+				// Search these user fields, in order of priority
 				$display_name = mb_strtolower( $user->display_name );
 				$user_login   = mb_strtolower( $user->user_login );
 				$roles        = mb_strtolower( implode( ', ', $user->roles ) );
@@ -490,38 +491,17 @@ class WC_Restrict_Categories {
 		$roles = self::get_role_labels();
 
 		$data = array(
-			'user_id'     => $user->ID,
-			'avatar'      => get_avatar( $user->ID, 24 ),
-			'name'        => $user->display_name,
-			'role'        => ! empty( $roles[ $user->roles[0] ] ) ? $roles[ $user->roles[0] ] : __( 'N/A', 'woocommerce-restrict-categories' ),
-			'views'       => absint( self::get_user_meta_for_term( $user->ID, 'views', $tax_slug, $term_id ) ),
-			'last_viewed' => self::get_user_meta_for_term( $user->ID, 'last_viewed', $tax_slug, $term_id ),
+			'user_id' => $user->ID,
+			'avatar'  => get_avatar( $user->ID, 24 ),
+			'name'    => $user->display_name,
+			'role'    => ! empty( $roles[ $user->roles[0] ] ) ? $roles[ $user->roles[0] ] : __( 'N/A', 'woocommerce-restrict-categories' ),
+			'email'   => $user->user_email,
+			'orders'  => absint( get_user_meta( $user->ID, '_order_count', true ) ),
 		);
 
 		echo json_encode( $data );
 
 		die();
-	}
-
-	/**
-	 *
-	 *
-	 * @access public
-	 * @since 1.0.0
-	 * @static
-	 *
-	 * @param int    $user_id
-	 * @param string $meta_key
-	 * @param string $taxonomy
-	 * @param int    $term_id
-	 *
-	 * @return mixed
-	 */
-	public static function get_user_meta_for_term( $user_id, $meta_key, $taxonomy, $term_id ) {
-		$prefix = sprintf( '%s%s_%d-', self::PREFIX, $taxonomy, absint( $term_id ) );
-		$value  = get_user_meta( $user_id, $prefix . $meta_key, true );
-
-		return is_array( $value ) ? (array) $value : ( is_numeric( $value ) ? intval( $value ) : (string) $value );
 	}
 
 	/**
@@ -609,6 +589,15 @@ class WC_Restrict_Categories {
 			||
 			self::is_whitelisted_user( $term_id, $taxonomy )
 		) {
+			/**
+			 * Fires after a whitelisted user has been granted access
+			 *
+			 * @param WP_User $user
+			 * @param string  $taxonomy
+			 * @param int     $term_id
+			 */
+			do_action( 'wcrc_whitelist_access_granted', wp_get_current_user(), $taxonomy, $term_id );
+
 			return;
 		}
 
@@ -636,7 +625,7 @@ class WC_Restrict_Categories {
 	}
 
 	/**
-	 * Order an array of user IDs by any WP_User field
+	 * Sort an array of user IDs by any WP_User field
 	 *
 	 * @access public
 	 * @since 1.0.0
@@ -648,7 +637,7 @@ class WC_Restrict_Categories {
 	 *
 	 * @return array
 	 */
-	public static function order_user_ids( $users, $orderby = 'display_name', $order = 'ASC' ) {
+	public static function sort_user_ids( $users, $orderby = 'display_name', $order = 'ASC' ) {
 		$sort = array();
 
 		foreach ( (array) $users as $user_id ) {
@@ -678,7 +667,13 @@ class WC_Restrict_Categories {
 	public static function has_whitelisted_role( $term_id, $taxonomy ) {
 		$term_id = absint( $term_id );
 
-		if ( ! taxonomy_exists( $taxonomy ) || ! term_exists( $term_id, $taxonomy ) ) {
+		if (
+			! is_user_logged_in()
+			||
+			! taxonomy_exists( $taxonomy )
+			||
+			! term_exists( $term_id, $taxonomy )
+		) {
 			return false;
 		}
 
@@ -706,7 +701,13 @@ class WC_Restrict_Categories {
 	public static function is_whitelisted_user( $term_id, $taxonomy ) {
 		$term_id = absint( $term_id );
 
-		if ( ! taxonomy_exists( $taxonomy ) || ! term_exists( $term_id, $taxonomy ) ) {
+		if (
+			! is_user_logged_in()
+			||
+			! taxonomy_exists( $taxonomy )
+			||
+			! term_exists( $term_id, $taxonomy )
+		) {
 			return false;
 		}
 

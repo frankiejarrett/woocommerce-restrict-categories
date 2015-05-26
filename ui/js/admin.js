@@ -8,7 +8,8 @@ jQuery( document ).ready( function( $ ) {
 	    $addBtn    = $( '#wcrc-user-whitelist-add' ),
 	    $removeBtn = $( '#wcrc-user-whitelist-remove-selected' ),
 	    $table     = $( '#wcrc-user-whitelist-table' ),
-	    $tbody     = $( 'tbody', $table );
+	    $tbody     = $( 'tbody', $table ),
+	    $noneFound = $( 'tr.wcrc-no-items', $tbody );
 
 	function setActiveStatus() {
 		if ( $active.is( ':checked' ) ) {
@@ -94,15 +95,15 @@ jQuery( document ).ready( function( $ ) {
 					return false;
 				}
 
-				var $helper = $tbody.find( 'tr.wcrc-helper' ),
+				var $helper = $( 'tr.wcrc-helper', $tbody ),
 				    $newRow = $helper.clone();
 
 				$newRow.removeAttr( 'class' );
-				$newRow.find( 'th input.wcrc-user-id' ).val( response.user_id );
-				$newRow.find( 'td.wcrc-name-column span' ).html( response.avatar + ' ' + response.name );
-				$newRow.find( 'td.wcrc-role-column' ).text( response.role );
-				$newRow.find( 'td.wcrc-views-column' ).text( response.views );
-				$newRow.find( 'td.wcrc-last-viewed-column' ).text( response.last_viewed );
+				$( 'th input.wcrc-user-id', $newRow ).val( response.user_id );
+				$( 'td.wcrc-name-column span', $newRow ).html( response.avatar + ' ' + response.name );
+				$( 'td.wcrc-role-column', $newRow ).text( response.role );
+				$( 'td.wcrc-email-column', $newRow ).text( response.email );
+				$( 'td.wcrc-orders-column', $newRow ).text( response.orders );
 
 				$helper.after( $newRow );
 
@@ -113,18 +114,6 @@ jQuery( document ).ready( function( $ ) {
 				$addBtn.prop( 'disabled', true );
 			}
 		);
-	});
-
-	// Remove row
-	$tbody.on( 'click', 'tr:not( .hidden ) .wcrc-user-whitelist-remove-row', function( e ) {
-		e.preventDefault();
-
-		var $thisRow = $( this ).closest( 'tr' );
-
-		$thisRow.remove();
-
-		calcUsersFound();
-		calcUsersSelected();
 	});
 
 	// Select row
@@ -140,16 +129,15 @@ jQuery( document ).ready( function( $ ) {
 
 		$selectedRows.remove();
 
-		$table.find( 'input.cb-select' ).prop( 'checked', false );
+		$( 'input.cb-select', $table ).prop( 'checked', false );
 
 		calcUsersFound();
 		calcUsersSelected();
 	});
 
 	function calcUsersFound() {
-		var $rows      = $tbody.find( 'tr:not( .hidden )' ),
-			$noneFound = $tbody.find( 'tr.wcrc-no-items' ),
-			$selectAll = $table.find( '.check-column.manage-column input.cb-select' );
+		var $rows      = $( 'tr:not( .hidden )', $tbody ),
+			$selectAll = $( '.check-column.manage-column input.cb-select', $table );
 
 		if ( 0 === $rows.length ) {
 			$noneFound.show();
@@ -166,7 +154,7 @@ jQuery( document ).ready( function( $ ) {
 	calcUsersFound();
 
 	function calcUsersSelected() {
-		var $selected = $tbody.find( 'tr:not( .hidden ) input.cb-select:checked' );
+		var $selected = $( 'tr:not( .hidden ) input.cb-select:checked', $tbody );
 
 		if ( 0 === $selected.length ) {
 			$removeBtn.prop( 'disabled', true );
@@ -177,12 +165,24 @@ jQuery( document ).ready( function( $ ) {
 
 	calcUsersSelected();
 
+	function calcColSpan() {
+		var colspan = $( 'thead th:visible', $table ).length;
+
+		$( 'td.colspanchange', $noneFound ).prop( 'colspan', colspan );
+	}
+
+	calcColSpan();
+
+	$( window ).resize( function() {
+		calcColSpan();
+	});
+
 	function getUsers() {
-		var $rows = $tbody.find( 'tr:not( .hidden )' ),
+		var $rows = $( 'tr:not( .hidden )', $tbody ),
 		    users = [];
 
 		$rows.each( function( index ) {
-			var user_id = $( this ).find( 'th input.wcrc-user-id' ).val();
+			var user_id = $( 'th input.wcrc-user-id', $( this ) ).val();
 
 			if ( user_id ) {
 				users.push( user_id );

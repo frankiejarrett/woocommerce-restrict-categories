@@ -51,35 +51,10 @@
 	padding: 16px 0 0 3px;
 }
 
-.wcrc-user-table thead th.wcrc-actions-column {
-	width: 3em;
-}
+@media screen and ( max-width: 1200px ) {
 
-.wcrc-user-table tbody th.wcrc-actions-column {
-	padding: 15px 10px 0 0;
-}
-
-.wcrc-user-table tbody th.wcrc-actions-column a {
-	display: none;
-	color: #a00;
-	font-size: 13px;
-}
-
-.wcrc-user-table tbody tr:hover th.wcrc-actions-column a {
-	display: block;
-}
-
-.wcrc-user-table tbody th.wcrc-actions-column a:hover {
-	color: #f00;
-}
-
-.wcrc-user-table tbody th.wcrc-actions-column .dashicons {
-	margin-top: 4px;
-}
-
-@media screen and ( max-width: 900px ) {
-
-	.wp-admin .wcrc-user-table .wcrc-actions-column {
+	.wp-admin .wcrc-user-table .wcrc-email-manage-column,
+	.wp-admin .wcrc-user-table .wcrc-email-column {
 		display: none;
 	}
 
@@ -98,15 +73,6 @@
 	.wp-admin .wcrc-user-table .check-column {
 		display: table-cell;
 		padding: 13px 10px 0 3px;
-	}
-
-	.wp-admin .wcrc-user-table thead .wcrc-actions-column {
-		display: table-cell;
-		width: auto;
-	}
-
-	.wp-admin .wcrc-user-table thead .wcrc-actions-column .hidden {
-		display: block;
 	}
 
 	.wp-admin .wcrc-user-table tfoot {
