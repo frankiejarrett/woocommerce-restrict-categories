@@ -187,10 +187,10 @@ class WC_Restrict_Categories {
 	 */
 	public function render_custom_term_fields( $term, $taxonomy ) {
 		$prefix = self::get_tax_term_option_name( $term->term_id, $taxonomy );
-		$active = (string) get_option( $prefix . 'active' );
-		$pass   = (string) get_option( $prefix . 'pass' );
-		$roles  = (array) get_option( $prefix . 'role_whitelist' );
-		$users  = (array) get_option( $prefix . 'user_whitelist' );
+		$active = (string) self::get_tax_term_option( $term->term_id, $taxonomy, 'active' );
+		$pass   = (string) self::get_tax_term_option( $term->term_id, $taxonomy, 'pass' );
+		$roles  = (array) self::get_tax_term_option( $term->term_id, $taxonomy, 'role_whitelist' );
+		$users  = (array) self::get_tax_term_option( $term->term_id, $taxonomy, 'user_whitelist' );
 		$labels = get_taxonomy_labels( get_taxonomy( $taxonomy ) );
 
 		/**
