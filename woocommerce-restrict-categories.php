@@ -203,7 +203,7 @@ class WC_Restrict_Categories {
 		 *
 		 * @return int
 		 */
-		$min_pass_length = apply_filters( 'wcrc_min_password_length', 3, $taxonomy, $term );
+		$min_pass_length = apply_filters( 'wcrc_min_password_length', 5, $taxonomy, $term );
 		?>
 		<tr class="form-field">
 			<th scope="row" valign="top">
