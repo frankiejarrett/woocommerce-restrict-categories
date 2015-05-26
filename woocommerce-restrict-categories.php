@@ -99,6 +99,8 @@ class WC_Restrict_Categories {
 
 		add_action( 'wp_ajax_wcrc_add_user', array( $this, 'ajax_add_user' ) );
 
+		add_action( 'template_redirect', array( $this, 'authenticate' ) );
+
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_tax_term_archive' ) );
 
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_product' ) );
@@ -514,6 +516,133 @@ class WC_Restrict_Categories {
 	 *
 	 * @return void
 	 */
+	public function authenticate() {
+		if (
+			empty( $_POST['wcrc_auth_nonce'] )
+			||
+			empty( $_POST['wcrc_pass'] )
+			||
+			empty( $_POST['wcrc_taxonomy'] )
+			||
+			empty( $_POST['wcrc_term_id'] )
+			||
+			empty( $_POST['_wp_http_referer'] )
+		) {
+			return;
+		}
+
+		$pass     = trim( $_POST['wcrc_pass'] );
+		$taxonomy = sanitize_key( $_POST['wcrc_taxonomy'] );
+		$term_id  = absint( $_POST['wcrc_term_id'] );
+		$redirect = home_url( wp_unslash( remove_query_arg( 'wcrc-auth', $_POST['_wp_http_referer'] ) ) );
+
+		if ( false === wp_verify_nonce( $_POST['wcrc_auth_nonce'], sprintf( 'wcrc_auth_nonce-%s-%d', $taxonomy, $term_id ) ) ) {
+			return;
+		}
+
+		$_pass = (string) self::get_tax_term_option( $term_id, $taxonomy, 'pass' );
+
+		if ( $pass === $_pass ) {
+			/**
+			 * Fires after a user has successfully entered the correct password
+			 *
+			 * @param string $taxonomy
+			 * @param int    $term_id
+			 * @param string $pass
+			 */
+			do_action( 'wcrc_password_success', $taxonomy, $term_id, $pass );
+
+			self::set_cookie( $term_id, $taxonomy, $pass );
+
+			wp_safe_redirect( $redirect, 302 );
+
+			exit;
+		}
+
+		/**
+		 * Fires after a user has entered an incorrect password
+		 *
+		 * @param string $taxonomy
+		 * @param int    $term_id
+		 * @param string $pass
+		 */
+		do_action( 'wcrc_password_incorrect', $taxonomy, $term_id, $pass );
+
+		$redirect = add_query_arg(
+			array(
+				'wcrc-auth' => 'incorrect',
+			),
+			$redirect
+		);
+
+		wp_safe_redirect( $redirect, 302 );
+
+		exit;
+	}
+
+	/**
+	 *
+	 *
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @return void
+	 */
+	public static function set_cookie( $term_id, $taxonomy, $pass ) {
+		$name = self::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
+
+		/**
+		 * Filter authentication cookie expiration length (in seconds)
+		 *
+		 * @since 1.0.0
+		 *
+		 * @param string $taxonomy
+		 * @param int    $term_id
+		 *
+		 * @return int
+		 */
+		$ttl = absint( apply_filters( 'wcrc_auth_cookie_ttl', HOUR_IN_SECONDS, $taxonomy, $term_id ) );
+
+		setcookie( $name, wp_hash_password( $pass ), time() + $ttl, '/' );
+	}
+
+	/**
+	 *
+	 *
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @param int    $term_id
+	 * @param string $taxonomy
+	 * @param string $hash
+	 *
+	 * @return bool
+	 */
+	public static function is_valid_cookie( $term_id, $taxonomy, $hash ) {
+		if ( ! class_exists( 'PasswordHash' ) ) {
+			require_once ABSPATH . 'wp-includes/class-phpass.php';
+		}
+
+		$hasher = new PasswordHash( 8, true );
+		$pass   = (string) self::get_tax_term_option( $term_id, $taxonomy, 'pass' );
+
+		return $hasher->CheckPassword( $pass, $hash );
+	}
+
+	/**
+	 *
+	 *
+	 * @action template_redirect
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 *
+	 * @return void
+	 */
 	public function maybe_restrict_tax_term_archive() {
 		if ( ! is_tax() ) {
 			return;
@@ -584,36 +713,46 @@ class WC_Restrict_Categories {
 	 * @return void
 	 */
 	public static function password_notice( $term_id, $taxonomy ) {
+		$cookie = self::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
+		$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
+
 		if (
 			self::has_whitelisted_role( $term_id, $taxonomy )
 			||
 			self::is_whitelisted_user( $term_id, $taxonomy )
+			||
+			self::is_valid_cookie( $term_id, $taxonomy, $hash )
 		) {
 			/**
-			 * Fires after a whitelisted user has been granted access
+			 * Fires after a visitor has been granted automatic access
 			 *
-			 * @param WP_User $user
 			 * @param string  $taxonomy
 			 * @param int     $term_id
 			 */
-			do_action( 'wcrc_whitelist_access_granted', wp_get_current_user(), $taxonomy, $term_id );
+			do_action( 'wcrc_access_granted', $taxonomy, $term_id );
 
 			return;
 		}
 
 		$tax_object = get_taxonomy( $taxonomy );
 		$tax_labels = get_taxonomy_labels( $tax_object );
-		$self_url   = home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) );
+		$self_url   = home_url( wp_unslash( remove_query_arg( 'wcrc-auth', $_SERVER['REQUEST_URI'] ) ) );
+		$incorrect  = ( isset( $_GET['wcrc-auth'] ) && 'incorrect' === $_GET['wcrc-auth'] );
 
 		ob_start();
 		?>
 		<div style="text-align:center;">
+			<?php if ( $incorrect ) : ?>
+				<p style="background:#ffe6e5;border:1px solid #ffc5c2;padding:10px;"><strong><?php _e( 'The password you entered is incorrect. Please try again.', 'woocommerce-restrict-categories' ) ?></strong></p>
+			<?php endif; ?>
 			<h1 style="border:none;"><?php printf( __( 'This is a Restricted %s', 'woocommerce-restrict-categories' ), esc_html( $tax_labels->singular_name ) ) ?></h1>
 			<p><?php _e( 'Please enter the password to unlock:', 'woocommerce-restrict-categories' ) ?></p>
 			<form method="post" action="<?php echo esc_url( $self_url ) ?>">
-				<p><input type="password" size="30" style="padding:3px 5px;font-size:16px;text-align:center;"></p>
+				<p><input type="password" name="wcrc_pass" size="30" style="padding:3px 5px;font-size:16px;text-align:center;" autocomplete="off"></p>
 				<p>
-					<?php wp_nonce_field( sprintf( 'wcrc_pass_nonce-%d', absint( $term_id ) ), 'wcrc_pass_nonce' ) ?>
+					<input type="hidden" name="wcrc_taxonomy" value="<?php echo sanitize_key( $taxonomy ) ?>">
+					<input type="hidden" name="wcrc_term_id" value="<?php echo absint( $term_id ) ?>">
+					<?php wp_nonce_field( sprintf( 'wcrc_auth_nonce-%s-%d', sanitize_key( $taxonomy ), absint( $term_id ) ), 'wcrc_auth_nonce' ) ?>
 					<input type="submit" class="button" value="<?php esc_attr_e( 'Continue', 'woocommerce-restrict-categories' ) ?>">
 				</p>
 			</form>
