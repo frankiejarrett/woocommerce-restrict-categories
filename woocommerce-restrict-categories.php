@@ -53,16 +53,6 @@ class WC_Restrict_Categories {
 	public static $taxonomies;
 
 	/**
-	 * Hold maximum number of users to preload during ajax search
-	 *
-	 * @access public
-	 * @static
-	 *
-	 * @var int
-	 */
-	public static $preload_users_max;
-
-	/**
 	 * Plugin version number
 	 *
 	 * @const string
@@ -89,15 +79,6 @@ class WC_Restrict_Categories {
 		 * @return array
 		 */
 		self::$taxonomies = (array) apply_filters( 'wcrc_taxonomies', array( 'product_cat', 'product_tag' ) );
-
-		/**
-		 * Filter the maximum number of users to preload during ajax search
-		 *
-		 * @since 1.0.0
-		 *
-		 * @return int
-		 */
-		self::$preload_users_max = absint( apply_filters( 'wcrc_preload_users_max', 50 ) );
 
 		add_action( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
 
@@ -448,8 +429,17 @@ class WC_Restrict_Categories {
 			$users
 		);
 
-		if ( count( $users ) > self::$preload_users_max ) {
-			$users = array_slice( $users, 0, self::$preload_users_max );
+		/**
+		 * Filter the maximum number of users to return during an ajax search
+		 *
+		 * @since 1.0.0
+		 *
+		 * @return int
+		 */
+		$max_users = absint( apply_filters( 'wcrc_ajax_search_users_max', 50 ) );
+
+		if ( count( $users ) > $max_users ) {
+			$users = array_slice( $users, 0, $max_users );
 		}
 
 		echo json_encode( array_values( $users ) );
