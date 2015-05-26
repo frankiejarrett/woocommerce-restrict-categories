@@ -60,6 +60,13 @@ class WC_Restrict_Categories {
 	const VERSION = '1.0.0';
 
 	/**
+	 * Unique key prefix
+	 *
+	 * @const string
+	 */
+	const PREFIX = 'wcrc_';
+
+	/**
 	 * Class constructor
 	 *
 	 * @access private
@@ -179,7 +186,7 @@ class WC_Restrict_Categories {
 	 * @return void
 	 */
 	public function render_custom_term_fields( $term, $taxonomy ) {
-		$prefix = sprintf( 'wcrc_%s_%d-', sanitize_key( $taxonomy ), absint( $term->term_id ) );
+		$prefix = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), absint( $term->term_id ) );
 		$active = (string) get_option( $prefix . 'active' );
 		$pass   = (string) get_option( $prefix . 'pass' );
 		$roles  = (array) get_option( $prefix . 'role_whitelist' );
@@ -353,7 +360,7 @@ class WC_Restrict_Categories {
 			return;
 		}
 
-		$prefix = sprintf( 'wcrc_%s_%d-', sanitize_key( $taxonomy ), absint( $term_id ) );
+		$prefix = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), absint( $term_id ) );
 
 		foreach ( (array) $_POST as $option => $value ) {
 			if ( 0 !== strpos( $option, $prefix ) ) {
@@ -374,7 +381,7 @@ class WC_Restrict_Categories {
 			update_option( $option, $value );
 
 			if ( $prefix . 'active' === $option ) {
-				$tax_option = sprintf( 'wcrc_%s', sanitize_key( $taxonomy ) );
+				$tax_option = self::PREFIX . sanitize_key( $taxonomy );
 				$terms      = (array) get_option( $tax_option );
 
 				if ( 'yes' === $value ) {
@@ -503,7 +510,7 @@ class WC_Restrict_Categories {
 	 * @return mixed
 	 */
 	public static function get_user_meta_for_term( $user_id, $meta_key, $taxonomy, $term_id ) {
-		$prefix = sprintf( 'wcrc_%s_%d-', $taxonomy, absint( $term_id ) );
+		$prefix = sprintf( '%s%s_%d-', self::PREFIX, $taxonomy, absint( $term_id ) );
 		$value  = get_user_meta( $user_id, $prefix . $meta_key, true );
 
 		return is_array( $value ) ? (array) $value : ( is_numeric( $value ) ? intval( $value ) : (string) $value );
@@ -568,8 +575,7 @@ class WC_Restrict_Categories {
 			}
 
 			$terms      = wp_list_pluck( $terms, 'term_id' );
-			$option     = sprintf( 'wcrc_%s', $taxonomy );
-			$restricted = (array) get_option( $option );
+			$restricted = (array) get_option( self::PREFIX . $taxonomy );
 			$intersect  = array_intersect( $terms, $restricted );
 
 			if ( ! empty( $intersect[0] ) ) {
@@ -669,7 +675,7 @@ class WC_Restrict_Categories {
 		}
 
 		$user      = wp_get_current_user();
-		$prefix    = sprintf( 'wcrc_%s_%d-', sanitize_key( $taxonomy ), $term_id );
+		$prefix    = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), $term_id );
 		$whitelist = (array) get_option( $prefix . 'role_whitelist' );
 		$roles     = isset( $user->roles ) ? (array) $user->roles : array();
 		$intersect = array_intersect( $roles, $whitelist );
@@ -696,7 +702,7 @@ class WC_Restrict_Categories {
 			return false;
 		}
 
-		$prefix    = sprintf( 'wcrc_%s_%d-', sanitize_key( $taxonomy ), $term_id );
+		$prefix    = sprintf( '%s%s_%d-', self::PREFIX, sanitize_key( $taxonomy ), $term_id );
 		$whitelist = (array) get_option( $prefix . 'user_whitelist' );
 
 		return in_array( get_current_user_id(), $whitelist );
