@@ -368,20 +368,22 @@ class WC_Restrict_Categories {
 				continue;
 			}
 
-			// Remove empty items in arrays
-			if ( is_array( $value ) ) {
-				$value = array_values( array_filter( $value ) );
-			}
-
 			// Sanitize strings
 			if ( is_string( $value ) ) {
 				$value = sanitize_text_field( $value );
 			}
 
-			// Order and sanitize user IDs
-			if ( $prefix . 'user_whitelist' === $option && is_array( $value ) ) {
-				$value = self::order_user_ids( $value );
-				$value = array_map( 'absint', $value );
+			// Sanitize arrays
+			if ( is_array( $value ) ) {
+				// Remove empty items in arrays
+				$value = array_values( array_filter( $value ) );
+
+				if ( $prefix . 'user_whitelist' === $option ) {
+					$value = self::order_user_ids( $value );
+					$value = array_map( 'absint', $value );
+				} else {
+					$value = array_map( 'sanitize_text_field', $value );
+				}
 			}
 
 			update_option( $option, $value );
