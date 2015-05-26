@@ -373,6 +373,11 @@ class WC_Restrict_Categories {
 				$value = array_values( array_filter( $value ) );
 			}
 
+			// Sanitize strings
+			if ( is_string( $value ) ) {
+				$value = sanitize_text_field( $value );
+			}
+
 			// Order and sanitize user IDs
 			if ( $prefix . 'user_whitelist' === $option && is_array( $value ) ) {
 				$value = self::order_user_ids( $value );
