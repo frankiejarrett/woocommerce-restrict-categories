@@ -143,7 +143,7 @@ class WC_Restrict_Categories_Auth {
 	 * @return void
 	 */
 	public function maybe_restrict_product() {
-		if ( ! is_singular( 'product' ) ) {
+		if ( ! is_single() ) {
 			return;
 		}
 
