@@ -210,6 +210,8 @@ class WC_Restrict_Categories_Auth {
 				 * users. This behavior can be overridden here globally or on a
 				 * more granular tax/term level using the available params.
 				 *
+				 * @since 1.0.0
+				 *
 				 * @param WP_Query $query
 				 * @param string   $taxonomy
 				 * @param int      $term_id
