@@ -250,16 +250,7 @@ class WC_Restrict_Categories_Auth {
 					continue;
 				}
 
-				$cookie = WC_Restrict_Categories_Term_Meta::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
-				$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
-
-				if (
-					! self::has_whitelisted_role( $term_id, $taxonomy )
-					&&
-					! self::is_whitelisted_user( $term_id, $taxonomy )
-					&&
-					! self::is_valid_cookie( $term_id, $taxonomy, $hash )
-				) {
+				if ( ! self::is_access_granted( $term_id, $taxonomy ) ) {
 					$_terms[] = $term_id;
 				}
 			}
@@ -293,24 +284,7 @@ class WC_Restrict_Categories_Auth {
 	 * @return void
 	 */
 	public static function password_notice( $term_id, $taxonomy ) {
-		$cookie = WC_Restrict_Categories_Term_Meta::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
-		$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
-
-		if (
-			self::has_whitelisted_role( $term_id, $taxonomy )
-			||
-			self::is_whitelisted_user( $term_id, $taxonomy )
-			||
-			self::is_valid_cookie( $term_id, $taxonomy, $hash )
-		) {
-			/**
-			 * Fires after a visitor has been granted automatic access
-			 *
-			 * @param string  $taxonomy
-			 * @param int     $term_id
-			 */
-			do_action( 'wcrc_access_granted', $taxonomy, $term_id );
-
+		if ( self::is_access_granted( $term_id, $taxonomy ) ) {
 			return;
 		}
 
@@ -382,7 +356,14 @@ class WC_Restrict_Categories_Auth {
 	 *
 	 * @return bool
 	 */
-	public static function is_valid_cookie( $term_id, $taxonomy, $hash ) {
+	public static function is_valid_cookie( $term_id, $taxonomy ) {
+		$cookie = WC_Restrict_Categories_Term_Meta::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
+		$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
+
+		if ( empty( $hash ) ) {
+			return false;
+		}
+
 		if ( ! class_exists( 'PasswordHash' ) ) {
 			require_once ABSPATH . 'wp-includes/class-phpass.php';
 		}
@@ -450,6 +431,48 @@ class WC_Restrict_Categories_Auth {
 		$whitelist = (array) WC_Restrict_Categories_Term_Meta::get_tax_term_option( $term_id, $taxonomy, 'user_whitelist' );
 
 		return in_array( get_current_user_id(), $whitelist );
+	}
+
+	/**
+	 * Returns true when a visitor is granted access
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @param int    $term_id
+	 * @param string $taxonomy
+	 *
+	 * @return bool
+	 */
+	public static function is_access_granted( $term_id, $taxonomy ) {
+		if (
+			self::has_whitelisted_role( $term_id, $taxonomy )
+			||
+			self::is_whitelisted_user( $term_id, $taxonomy )
+			||
+			self::is_valid_cookie( $term_id, $taxonomy )
+		) {
+			/**
+			 * Fires after a visitor has been granted automatic access
+			 *
+			 * @param string  $taxonomy
+			 * @param int     $term_id
+			 */
+			do_action( 'wcrc_access_granted', $taxonomy, $term_id );
+
+			return true;
+		}
+
+		/**
+		 * Fires after a visitor has been denied access
+		 *
+		 * @param string  $taxonomy
+		 * @param int     $term_id
+		 */
+		do_action( 'wcrc_access_denied', $taxonomy, $term_id );
+
+		return false;
 	}
 
 }
