@@ -252,7 +252,9 @@ class WC_Restrict_Categories_Auth {
 			$tax_queries = array_merge( (array) $query->tax_query->queries, $tax_queries );
 		}
 
-		$query->set( 'tax_query', $tax_queries );
+		if ( ! empty( $tax_queries ) ) {
+			$query->set( 'tax_query', $tax_queries );
+		}
 	}
 
 	/**
