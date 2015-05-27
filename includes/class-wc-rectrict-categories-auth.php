@@ -177,7 +177,7 @@ class WC_Restrict_Categories_Auth {
 				 * By default, posts that belong to restricted categories are
 				 * also restricted when their URL is accessed directly by
 				 * unauthenticated users. This behavior can be overridden here
-				 * globally or on a more granular post/tax/term level using the
+				 * globally or on a more granular post/tax/term basis using the
 				 * available params.
 				 *
 				 * @since 1.0.0
@@ -234,7 +234,7 @@ class WC_Restrict_Categories_Auth {
 				 * By default, posts that belong to restricted categories are
 				 * filtered out of the frontend query results for unauthenticated
 				 * users. This behavior can be overridden here globally or on a
-				 * more granular tax/term level using the available params.
+				 * more granular tax/term basis using the available params.
 				 *
 				 * @since 1.0.0
 				 *
