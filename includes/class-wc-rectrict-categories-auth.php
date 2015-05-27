@@ -447,11 +447,11 @@ class WC_Restrict_Categories_Auth {
 	 */
 	public static function is_access_granted( $term_id, $taxonomy ) {
 		if (
+			self::is_valid_cookie( $term_id, $taxonomy )
+			||
 			self::has_whitelisted_role( $term_id, $taxonomy )
 			||
 			self::is_whitelisted_user( $term_id, $taxonomy )
-			||
-			self::is_valid_cookie( $term_id, $taxonomy )
 		) {
 			/**
 			 * Fires after a visitor has been granted automatic access
