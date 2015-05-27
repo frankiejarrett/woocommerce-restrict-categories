@@ -225,15 +225,12 @@ class WC_Restrict_Categories_Auth {
 			}
 		}
 
-		if ( isset( $query->tax_query->queries ) ) {
-			$query->tax_query->queries = array_merge( $query->tax_query->queries, $tax_queries );
-		} else {
-			$queries            = new stdClass();
-			$tax_query->queries = $tax_queries;
-			$query->tax_query   = $queries;
+		// Don't overwrite any existing tax queries
+		if ( ! empty( $query->tax_query->queries ) ) {
+			$tax_queries = array_merge( (array) $query->tax_query->queries, $tax_queries );
 		}
 
-		$query->query_vars['tax_query'] = $query->tax_query->queries;
+		$query->set( 'tax_query', $tax_queries );
 	}
 
 	/**
