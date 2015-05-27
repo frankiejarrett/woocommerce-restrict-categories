@@ -168,9 +168,9 @@ class WC_Restrict_Categories_Auth {
 
 			$terms      = wp_list_pluck( $terms, 'term_id' );
 			$restricted = (array) get_option( WC_Restrict_Categories::PREFIX . $taxonomy );
-			$intersect  = array_intersect( $terms, $restricted );
+			$matches    = array_intersect( $terms, $restricted );
 
-			foreach ( $terms as $term_id ) {
+			foreach ( $matches as $key => $term_id ) {
 				/**
 				 * Filter if/when posts in restricted taxonomies should be restricted
 				 *
@@ -190,13 +190,13 @@ class WC_Restrict_Categories_Auth {
 				 */
 				$restrict_post = (bool) apply_filters( 'wcrc_restrict_post', true, $post_id, $taxonomy, $term_id );
 
-				if ( false === $restrict_post && false !== ( $key = array_search( $term_id, $intersect ) ) ) {
-					unset( $intersect[ $key ] );
+				if ( false === $restrict_post ) {
+					unset( $matches[ $key ] );
 				}
 			}
 
-			if ( ! empty( $intersect[0] ) ) {
-				self::password_notice( $intersect[0], $taxonomy );
+			if ( ! empty( $matches[0] ) ) {
+				self::password_notice( $matches[0], $taxonomy );
 			}
 		}
 	}
