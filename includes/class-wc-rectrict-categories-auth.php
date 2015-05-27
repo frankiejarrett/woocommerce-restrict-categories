@@ -21,7 +21,7 @@ class WC_Restrict_Categories_Auth {
 		// Check for possible restriction on single products
 		add_action( 'template_redirect', array( $this, 'maybe_restrict_post' ) );
 
-		// Omit posts from restricted taxonomies from main queries when not authenticated
+		// Omit posts in restricted taxonomies from frontend queries when not authenticated
 		add_action( 'pre_get_posts', array( $this, 'maybe_filter_posts' ) );
 	}
 
@@ -202,6 +202,26 @@ class WC_Restrict_Categories_Auth {
 			$_terms = array();
 
 			foreach ( $terms as $term_id ) {
+				/**
+				 * Filter if/when posts should be hidden from frontend queries
+				 *
+				 * By default, posts that belong to restricted categories are
+				 * filtered out of the frontend query results for unauthenticated
+				 * users. This behavior can be overridden here globally or on a
+				 * more granular tax/term level using the available params.
+				 *
+				 * @param WP_Query $query
+				 * @param string   $taxonomy
+				 * @param int      $term_id
+				 *
+				 * @return bool
+				 */
+				$hide_posts = (bool) apply_filters( 'wcrc_hide_posts_on_frontend', true, $query, $taxonomy, $term_id );
+
+				if ( false === $hide_posts ) {
+					continue;
+				}
+
 				$cookie = WC_Restrict_Categories_Term_Meta::get_tax_term_option_name( $term_id, $taxonomy, 'hash' );
 				$hash   = ! empty( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : null;
 
