@@ -159,7 +159,8 @@ class WC_Restrict_Categories_Auth {
 		}
 
 		foreach ( WC_Restrict_Categories::$taxonomies as $taxonomy ) {
-			$terms = wp_get_post_terms( get_queried_object_id(), $taxonomy );
+			$post_id = get_queried_object_id();
+			$terms   = wp_get_post_terms( $post_id, $taxonomy );
 
 			if ( empty( $terms ) || is_wp_error( $terms ) ) {
 				continue;
@@ -168,6 +169,31 @@ class WC_Restrict_Categories_Auth {
 			$terms      = wp_list_pluck( $terms, 'term_id' );
 			$restricted = (array) get_option( WC_Restrict_Categories::PREFIX . $taxonomy );
 			$intersect  = array_intersect( $terms, $restricted );
+
+			foreach ( $terms as $term_id ) {
+				/**
+				 * Filter if/when posts in restricted taxonomies should be restricted
+				 *
+				 * By default, posts that belong to restricted categories are
+				 * also restricted when their URL is accessed directly by
+				 * unauthenticated users. This behavior can be overridden here
+				 * globally or on a more granular post/tax/term level using the
+				 * available params.
+				 *
+				 * @since 1.0.0
+				 *
+				 * @param int    $post_id
+				 * @param string $taxonomy
+				 * @param int    $term_id
+				 *
+				 * @return bool
+				 */
+				$restrict_post = (bool) apply_filters( 'wcrc_restrict_post', true, $post_id, $taxonomy, $term_id );
+
+				if ( false === $restrict_post && false !== ( $key = array_search( $term_id, $intersect ) ) ) {
+					unset( $intersect[ $key ] );
+				}
+			}
 
 			if ( ! empty( $intersect[0] ) ) {
 				self::password_notice( $intersect[0], $taxonomy );
@@ -218,7 +244,7 @@ class WC_Restrict_Categories_Auth {
 				 *
 				 * @return bool
 				 */
-				$hide_posts = (bool) apply_filters( 'wcrc_hide_posts_on_frontend', true, $query, $taxonomy, $term_id );
+				$hide_posts = (bool) apply_filters( 'wcrc_hide_posts_from_results', true, $query, $taxonomy, $term_id );
 
 				if ( false === $hide_posts ) {
 					continue;
