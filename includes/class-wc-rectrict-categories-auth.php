@@ -496,7 +496,7 @@ class WC_Restrict_Categories_Auth {
 	}
 
 	/**
-	 * Returns an array of restricted terms for a given post
+	 * Returns an array of restricted taxonomy terms for a given post
 	 *
 	 * @access public
 	 * @since 1.0.0
