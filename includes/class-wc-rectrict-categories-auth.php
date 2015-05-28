@@ -23,6 +23,9 @@ class WC_Restrict_Categories_Auth {
 
 		// Omit posts in restricted taxonomies from frontend queries when not authenticated
 		add_action( 'pre_get_posts', array( $this, 'maybe_filter_posts' ) );
+
+		// Prevent products in restricted taxonomies from being purchasable when not authenticated
+		add_filter( 'woocommerce_is_purchasable', array( $this, 'maybe_is_purchasable' ), 10, 2 );
 	}
 
 	/**
@@ -154,23 +157,15 @@ class WC_Restrict_Categories_Auth {
 			return;
 		}
 
-		if ( ! in_array( get_post_type(), WC_Restrict_Categories::$post_types ) ) {
+		$post_id = get_queried_object_id();
+		$r_terms = self::get_post_restricted_terms( $post_id );
+
+		if ( empty( $r_terms ) ) {
 			return;
 		}
 
-		foreach ( WC_Restrict_Categories::$taxonomies as $taxonomy ) {
-			$post_id = get_queried_object_id();
-			$terms   = wp_get_post_terms( $post_id, $taxonomy );
-
-			if ( empty( $terms ) || is_wp_error( $terms ) ) {
-				continue;
-			}
-
-			$terms      = wp_list_pluck( $terms, 'term_id' );
-			$restricted = (array) get_option( WC_Restrict_Categories::PREFIX . $taxonomy );
-			$matches    = array_intersect( $terms, $restricted );
-
-			foreach ( $matches as $key => $term_id ) {
+		foreach ( $r_terms as $taxonomy => $terms ) {
+			foreach ( $terms as $key => $term_id ) {
 				/**
 				 * Filter if/when posts in restricted taxonomies should be restricted
 				 *
@@ -191,14 +186,23 @@ class WC_Restrict_Categories_Auth {
 				$restrict_post = (bool) apply_filters( 'wcrc_restrict_post', true, $post_id, $taxonomy, $term_id );
 
 				if ( false === $restrict_post ) {
-					unset( $matches[ $key ] );
+					unset( $r_terms[ $taxonomy ][ $key ] );
 				}
 			}
 
-			if ( ! empty( $matches[0] ) ) {
-				self::password_notice( $matches[0], $taxonomy );
+			if ( empty( $r_terms[ $taxonomy ] ) ) {
+				unset( $r_terms[ $taxonomy ] );
 			}
 		}
+
+		if ( empty( $r_terms ) ) {
+			return;
+		}
+
+		$terms   = array_shift( $r_terms );
+		$term_id = array_shift( $terms );
+
+		self::password_notice( $term_id, $taxonomy );
 	}
 
 	/**
@@ -272,6 +276,27 @@ class WC_Restrict_Categories_Auth {
 		if ( ! empty( $tax_queries ) ) {
 			$query->set( 'tax_query', $tax_queries );
 		}
+	}
+
+	/**
+	 * Prevent products in restricted categories from being purchasable when unauthenticated
+	 *
+	 * @filter woocommerce_is_purchasable
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 *
+	 * @param bool   $is_purchasable
+	 * @param object $product
+	 *
+	 * @return bool
+	 */
+	public function maybe_is_purchasable( $is_purchasable, $product ) {
+		if ( self::get_post_restricted_terms( $product->id ) ) {
+			return false;
+		}
+
+		return $is_purchasable;
 	}
 
 	/**
@@ -466,6 +491,57 @@ class WC_Restrict_Categories_Auth {
 		 * @param int     $term_id
 		 */
 		do_action( 'wcrc_access_denied', $taxonomy, $term_id );
+
+		return false;
+	}
+
+	/**
+	 * Returns an array of restricted terms for a given post
+	 *
+	 * @access public
+	 * @since 1.0.0
+	 * @static
+	 *
+	 * @param mixed $post  Post ID or WP_Post object
+	 *
+	 * @return array|bool
+	 */
+	public static function get_post_restricted_terms( $post ) {
+		$post_id = isset( $post->ID ) ? $post->ID : absint( $post );
+
+		if (
+			empty( $post_id )
+			||
+			! in_array( get_post_type( $post_id ), WC_Restrict_Categories::$post_types )
+		) {
+			return false;
+		}
+
+		$output = array();
+
+		foreach ( WC_Restrict_Categories::$taxonomies as $taxonomy ) {
+			$terms = wp_get_post_terms( $post_id, $taxonomy );
+
+			if ( empty( $terms ) || is_wp_error( $terms ) ) {
+				continue;
+			}
+
+			$terms   = wp_list_pluck( $terms, 'term_id' );
+			$r_terms = (array) get_option( WC_Restrict_Categories::PREFIX . $taxonomy );
+			$matches = array_intersect( $terms, $r_terms );
+
+			sort( $matches );
+
+			if ( ! empty( $matches[0] ) ) {
+				$output[ $taxonomy ] = $matches;
+			}
+		}
+
+		ksort( $output );
+
+		if ( ! empty( $output ) ) {
+			return (array) $output;
+		}
 
 		return false;
 	}
