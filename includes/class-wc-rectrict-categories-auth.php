@@ -387,13 +387,7 @@ class WC_Restrict_Categories_Auth {
 	 * @return bool
 	 */
 	public static function has_whitelisted_role( $term_id, $taxonomy ) {
-		if (
-			! is_user_logged_in()
-			||
-			! taxonomy_exists( $taxonomy )
-			||
-			! term_exists( absint( $term_id ), $taxonomy )
-		) {
+		if ( ! is_user_logged_in() ) {
 			return false;
 		}
 
@@ -418,13 +412,7 @@ class WC_Restrict_Categories_Auth {
 	 * @return bool
 	 */
 	public static function is_whitelisted_user( $term_id, $taxonomy ) {
-		if (
-			! is_user_logged_in()
-			||
-			! taxonomy_exists( $taxonomy )
-			||
-			! term_exists( absint( $term_id ), $taxonomy )
-		) {
+		if ( ! is_user_logged_in() ) {
 			return false;
 		}
 
@@ -446,6 +434,13 @@ class WC_Restrict_Categories_Auth {
 	 * @return bool
 	 */
 	public static function is_access_granted( $term_id, $taxonomy ) {
+		// Exit early when applicable in rare cases
+		// No need to fire the access denied action this early
+		// You can't be denied access to something that doesn't exist
+		if ( ! term_exists( $term_id, $taxonomy ) || ! taxonomy_exists( $taxonomy ) ) {
+			return false;
+		}
+
 		if (
 			self::is_valid_cookie( $term_id, $taxonomy )
 			||
