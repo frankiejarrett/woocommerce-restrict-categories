@@ -27,17 +27,13 @@ Take full control over who can access your product category archives!
 
 ## Screenshots ##
 
-### Restrict access to categories with a single checkbox and password
-
-![Restrict access to categories with a single checkbox and password](assets/screenshot-1.png)
-
 ### Whitelist roles and users to automatically grant them access without requiring a password
 
-![Whitelist roles and users to automatically grant them access without requiring a password](assets/screenshot-2.png)
+![Whitelist roles and users to automatically grant them access without requiring a password](assets/screenshot-1.png)
 
 ### Users are prompted to unlock restricted content before viewing
 
-![Users are prompted to unlock restricted content before viewing](assets/screenshot-3.png)
+![Users are prompted to unlock restricted content before viewing](assets/screenshot-2.png)
 
 ## Changelog ##
 
