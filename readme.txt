@@ -9,21 +9,27 @@ License URI: https://www.gnu.org/licenses/gpl-3.0.html
 WC requires at least: 2.1.0
 WC tested up to: 2.3.9
 
-Tagline here
+Password protect your product category archives, and the products inside them.
 
 == Description ==
 
-More info
+Take full control over who can access your product category archives!
+
+ * Feature certain products for VIP customers only
+ * Great for membership sites with members-only product categories
+ * Prompts users for a password when they attempt to access a restricted category
+ * Products belonging to restricted categories are automatically password protected too
+ * Whitelist roles and users who should always have access without requiring a password
 
 == Frequently Asked Questions ==
 
-= I have a question? =
-
-This is the answer.
+= TODO =
 
 == Screenshots ==
 
-1. An important thing.
+1. Restrict access to categories with a single checkbox and password
+2. Whitelist roles and users to automatically grant them access without requiring a password
+3. Users are prompted to unlock restricted content before viewing
 
 == Changelog ==
 
