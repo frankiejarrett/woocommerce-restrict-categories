@@ -27,8 +27,7 @@ Take full control over who can access your product category archives!
 
 == Screenshots ==
 
-1. Whitelist roles and users to automatically grant them access without requiring a password
-2. Users are prompted to unlock restricted content before viewing
+1. Users are prompted to unlock restricted content before viewing
 
 == Changelog ==
 
