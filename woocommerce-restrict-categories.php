@@ -12,7 +12,7 @@
  * Text Domain: woocommerce-restrict-categories
  * Domain Path: /languages
  *
- * Copyright: © 2009-2015 WooThemes.
+ * Copyright: © 2015 Frankie Jarrett.
  * License: GNU General Public License v3.0
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  */
