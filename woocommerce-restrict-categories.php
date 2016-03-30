@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WooCommerce Restrict Categories
  * Plugin URI: http://www.woothemes.com/products/woocommerce-restrict-categories/
- * Description:
+ * Description: Password protect your product category archives, and the products inside them.
  * Version: 1.0.0
  * Author: Frankie Jarrett
  * Author URI: http://frankiejarrett.com
