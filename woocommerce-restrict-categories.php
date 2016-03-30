@@ -4,10 +4,8 @@
  * Plugin URI: http://www.woothemes.com/products/woocommerce-restrict-categories/
  * Description:
  * Version: 1.0.0
- * Author: WooThemes
- * Author URI: http://woothemes.com/
- * Developer: Frankie Jarrett
- * Developer URI: http://frankiejarrett.com/
+ * Author: Frankie Jarrett
+ * Author URI: http://frankiejarrett.com
  * Depends: WooCommerce
  * Text Domain: woocommerce-restrict-categories
  * Domain Path: /languages
